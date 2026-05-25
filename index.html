@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Gaming Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #0a0c14;
+            color: #f1f5f9;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 550px;
+            background: #11131c;
+            border: 1px solid #1e2235;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #1e2235;
+            padding-bottom: 14px;
+        }
+        .header-title h1 { font-size: 1.2rem; color: #38bdf8; letter-spacing: 1px; }
+        .header-title p { font-size: 0.75rem; color: #64748b; }
+        
+        .refresh-btn {
+            background: #1e2235;
+            color: #fff;
+            border: 1px solid #333954;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .refresh-btn:hover { background: #292f49; }
+
+        /* --- Grid 4 Main Stats --- */
+        .main-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #161a26;
+            border: 1px solid #22283a;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-box i { font-size: 1rem; color: #64748b; margin-bottom: 6px; }
+        .stat-box p { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; }
+        .stat-box .val { font-size: 1.3rem; font-weight: bold; margin: 4px 0; }
+        .stat-box .sub { font-size: 0.65rem; color: #475569; }
+
+        /* --- Section Layout --- */
+        .section-title {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- CPU Core Usage (6 Cores) --- */
+        .cores-container {
+            background: #161a26;
+            border: 1px solid #22283a;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .core-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; }
+        .core-bar-bg { width: 55%; height: 6px; background: #22283a; border-radius: 3px; overflow: hidden; margin: 0 8px; }
+        .core-bar-fill { height: 100%; background: #38bdf8; width: 0%; transition: width 0.3s ease; }
+
+        /* --- Temperatures & Top Processes --- */
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .sub-panel { background: #161a26; border: 1px solid #22283a; border-radius: 10px; padding: 14px; min-height: 110px;}
+        
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+        .list-row:last-child { margin-bottom: 0; }
+        
+        .badge {
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .bg-normal { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .bg-warm { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .bg-hot { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        .proc-name { color: #cbd5e1; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+        .proc-stat { color: #38bdf8; font-size: 0.75rem; font-weight: 600; }
+
+        /* --- Chart --- */
+        .chart-panel { background: #161a26; border: 1px solid #22283a; border-radius: 10px; padding: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-title">
+                <h1>GAMING DASHBOARD</h1>
+                <p>🔴 LIVE MONITORING</p>
+            </div>
+            <button class="refresh-btn" id="refreshBtn"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+
+        <div class="main-stats">
+            <div class="stat-box">
+                <i class="fa-solid fa-microchip"></i>
+                <p>CPU</p>
+                <div class="val" id="cpu-main">--%</div>
+                <div class="sub">i7-13700K</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-gamepad"></i>
+                <p>GPU</p>
+                <div class="val" id="gpu-main">--%</div>
+                <div class="sub">RTX 4070Ti</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-memory"></i>
+                <p>RAM</p>
+                <div class="val" id="ram-main">--%</div>
+                <div class="sub">22.4 / 32GB</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-bolt"></i>
+                <p>FPS</p>
+                <div class="val" id="fps-main" style="color:#38bdf8">--</div>
+                <div class="sub">1440p Ultra</div>
+            </div>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-chart-simple"></i> CPU Core Usage</div>
+        <div class="cores-container" id="cores-box">
+            </div>
+
+        <div class="two-col">
+            <div>
+                <div class="section-title"><i class="fa-solid fa-thermometer"></i> Temperature</div>
+                <div class="sub-panel" id="temp-box">
+                    </div>
+            </div>
+            
+            <div>
+                <div class="section-title"><i class="fa-solid fa-list-check"></i> Top Processes</div>
+                <div class="sub-panel">
+                    <div class="list-row"><span class="proc-name">cyberpunk2077.exe</span><span class="proc-stat">42%</span></div>
+                    <div class="list-row"><span class="proc-name">discord.exe</span><span class="proc-stat">3%</span></div>
+                    <div class="list-row"><span class="proc-name">obs64.exe</span><span class="proc-stat">9%</span></div>
+                    <div class="list-row"><span class="proc-name">chrome.exe</span><span class="proc-stat">5%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-timeline"></i> FPS History (Last 30s)</div>
+        <div class="chart-panel">
+            <canvas id="fpsChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // 1. เจนโครงสร้าง 6 Cores
+        const coresBox = document.getElementById('cores-box');
+        for(let i = 0; i < 6; i++) {
+            coresBox.innerHTML += `
+                <div class="core-row">
+                    <span>Core ${i}</span>
+                    <div class="core-bar-bg"><div class="core-bar-fill" id="core-fill-${i}"></div></div>
+                    <span id="core-val-${i}">0%</span>
+                </div>`;
+        }
+
+        // 2. ตั้งค่ากราฟ Chart.js
+        const ctx = document.getElementById('fpsChart').getContext('2d');
+        const fpsHistory = Array(15).fill(120); 
+        const fpsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(15).fill(''),
+                datasets: [{
+                    data: fpsHistory,
+                    borderColor: '#38bdf8',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { display: false }, 
+                    y: { grid: { color: '#1e2235' }, ticks: { color: '#64748b' }, min: 80, max: 160 } 
+                }
+            }
+        });
+
+        // 3. ฟังก์ชัน Logic รันข้อมูล Real-time
+        function runDashboardUpdate() {
+            const cpuTotal = Math.floor(Math.random() * (65 - 35 + 1)) + 35;
+            const gpuTotal = Math.floor(Math.random() * (85 - 50 + 1)) + 50;
+            const ramTotal = Math.floor(Math.random() * (75 - 65 + 1)) + 65;
+            const currentFPS = Math.floor(Math.random() * (135 - 115 + 1)) + 115;
+
+            // ส่งค่าไปอัปเดตตาม ID เวอร์ชันใหม่
+            document.getElementById('cpu-main').innerText = cpuTotal + '%';
+            document.getElementById('gpu-main').innerText = gpuTotal + '%';
+            document.getElementById('ram-main').innerText = ramTotal + '%';
+            document.getElementById('fps-main').innerText = currentFPS;
+
+            // อัปเดตแถบคอร์ประมวลผล
+            for(let i = 0; i < 6; i++) {
+                const coreVal = Math.max(10, Math.min(100, cpuTotal + Math.floor(Math.random() * 30 - 15)));
+                document.getElementById(`core-fill-${i}`).style.width = coreVal + '%';
+                document.getElementById(`core-val-${i}`).innerText = coreVal + '%';
+            }
+
+            // คำนวณความร้อนและ Badge สัญญาณไฟเตือนอัตโนมัติ
+            const cpuTemp = Math.floor(Math.random() * (65 - 45 + 1)) + 45;
+            const gpuTemp = Math.floor(Math.random() * (82 - 58 + 1)) + 58;
+            
+            const getBadge = (t) => {
+                if(t < 60) return `<span class="badge bg-normal">NORMAL</span>`;
+                if(t < 75) return `<span class="badge bg-warm">WARM</span>`;
+                return `<span class="badge bg-hot">HOT</span>`;
+            };
+
+            document.getElementById('temp-box').innerHTML = `
+                <div class="list-row"><span>CPU Package</span><strong>${cpuTemp}°C</strong> ${getBadge(cpuTemp)}</div>
+                <div class="list-row"><span>GPU Die</span><strong>${gpuTemp}°C</strong> ${getBadge(gpuTemp)}</div>
+                <div class="list-row"><span>NVMe SSD</span><strong>41°C</strong> ${getBadge(41)}</div>
+            `;
+
+            // ผลักข้อมูลเข้ากราฟเส้น
+            fpsHistory.push(currentFPS);
+            fpsHistory.shift();
+            fpsChart.update();
+        }
+
+        // 4. ผูกระบบปุ่มกด และเปิดระบบ Auto-run ทุกๆ 1 วินาที
+        document.getElementById('refreshBtn').addEventListener('click', runDashboardUpdate);
+        setInterval(runDashboardUpdate, 1000);
+        
+        // รันครั้งแรกทันทีที่เปิดเว็บ
+        runDashboardUpdate();
+    </script>
+</body>
+</html>
